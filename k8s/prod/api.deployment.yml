@@ -1,0 +1,77 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: api-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: gcr.io/focus-sequencer-175819/api:latest
+          env:
+            - name: MIX_ENV
+              value: prod
+            - name: ENDPOINT_HOST
+              value: api.app.mydomain.com
+            - name: PG_HOST
+              value: 127.0.0.1
+            - name: PG_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mstech
+                  key: pg_username
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mstech
+                  key: pg_password
+            - name: BACKOFFICE_DB_NAME
+              value: backoffice_prod
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  name: mstech
+                  key: secret_key_base
+            - name: GOTH_KEYFILE
+              value: "/secrets/goth/keyfile.json"
+            - name: API_SSL_KEY_PATH
+              value: "/umbrella/apps/api/priv/ssl/bcredi.key"
+            - name: API_SSL_CERT_PATH
+              value: "/umbrella/apps/api/priv/ssl/STAR_bcredi_com_br.crt"
+            - name: API_SSL_CA_CERT_PATH
+              value: "/umbrella/apps/api/priv/ssl/STAR_bcredi_com_br.ca-bundle"
+          volumeMounts:
+            - name: goth-keyfile
+              mountPath: /secrets/goth
+              readOnly: true
+        - name: api-sql-proxy
+          image: b.gcr.io/cloudsql-docker/gce-proxy:1.09
+          command:
+            - "/cloud_sql_proxy"
+            - "-dir=/cloudsql"
+            - "-instances=focus-sequencer-175820:us-east1:mstech-pg=tcp:5432"
+            - "-credential_file=/secrets/cloudsql/keyfile.json"
+          volumeMounts:
+            - name: cloudsql-keyfile
+              mountPath: /secrets/cloudsql
+              readOnly: true
+            - name: ssl-certs
+              mountPath: /etc/ssl/certs
+            - name: cloudsql-dir
+              mountPath: /cloudsql
+      volumes:
+        - name: goth-keyfile
+          secret:
+            secretName: goth-keyfile
+        - name: cloudsql-keyfile
+          secret:
+            secretName: cloudsql-keyfile
+        - name: ssl-certs
+          hostPath:
+            path: /etc/ssl/certs
+        - name: cloudsql-dir
+          emptyDir:
