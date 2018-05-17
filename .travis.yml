@@ -1,0 +1,15 @@
+sudo: required
+
+services:
+  - docker
+
+script:
+  # TODO - check why the dependencies don't work properly on travis
+  - docker-compose run --rm tests mix do deps.get, test.reset, test
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: scripts/deploy.sh
+  on:
+    branch: master
