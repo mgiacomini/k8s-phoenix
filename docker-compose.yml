@@ -1,0 +1,43 @@
+app:
+  build: .
+  dockerfile: Dockerfile-dev
+  volumes:
+    - .:/umbrella
+    - /umbrella/apps/web/assets/node_modules
+  ports:
+    - 4000:4000
+    - 4001:4001
+
+web:
+  extends: app
+  environment:
+    - TRAVIS_JOB_ID
+    - USER
+    - USERNAME
+    - MIX_ENV=dev
+    - PG_HOST=db
+    - PG_USERNAME=postgres
+    - PG_PASSWORD=postgres
+  links:
+    - db
+
+tests:
+  extends: app
+  command: mix do test.reset, test
+  environment:
+    - TRAVIS_JOB_ID
+    - USER
+    - USERNAME
+    - MIX_ENV=test
+    - PG_HOST=db
+    - PG_USERNAME=postgres
+    - PG_PASSWORD=postgres
+  links:
+    - db
+
+db:
+  image: postgres:9.5
+  environment:
+    - POSTGRES_PASSWORD=postgres
+  ports:
+    - 5432
