@@ -1,0 +1,21 @@
+# https://hub.docker.com/_/elixir/
+FROM elixir:1.6.4
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update
+RUN mix local.hex --force
+RUN mix local.rebar --force
+
+RUN mkdir -p /umbrella
+COPY . /umbrella
+WORKDIR /umbrella/apps/api
+
+ENV MIX_ENV prod
+ENV PORT 4001
+
+RUN mix do deps.get, compile
+
+EXPOSE 4001
+
+CMD ["mix", "phx.server"]

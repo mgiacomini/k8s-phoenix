@@ -1,0 +1,30 @@
+# https://hub.docker.com/_/elixir/
+FROM elixir:1.6.4
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN mix local.hex --force
+RUN mix local.rebar --force
+
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
+RUN apt-get install -y -q nodejs
+RUN apt-get install -y -q inotify-tools
+
+RUN mkdir -p /umbrella
+COPY . /umbrella
+WORKDIR /umbrella/apps/web
+
+ENV MIX_ENV prod
+ENV PORT 4000
+
+RUN mix do deps.get, compile
+
+RUN cd assets && \
+  npm install --silent && \
+  node_modules/brunch/bin/brunch build --production
+
+RUN mix phx.digest
+
+EXPOSE 4000
+
+CMD ["mix", "phx.server"]

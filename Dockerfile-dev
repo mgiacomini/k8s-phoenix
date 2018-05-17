@@ -1,0 +1,32 @@
+# https://hub.docker.com/_/elixir/
+FROM elixir:1.6.4
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+  apt-get install -y postgresql-client inotify-tools
+RUN mix archive.install --force \
+  https://github.com/phoenixframework/archives/raw/master/phx_new.ez
+RUN mix local.hex --force
+RUN mix local.rebar --force
+
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
+RUN apt-get install -y -q nodejs
+RUN apt-get install -y -q inotify-tools
+
+RUN mkdir -p /umbrella
+COPY . /umbrella
+WORKDIR /umbrella
+
+ENV MIX_ENV dev
+
+RUN pip install scipy
+RUN mix deps.get
+
+RUN cd apps/web/assets && \
+  npm install --silent
+
+EXPOSE 4000
+EXPOSE 4001
+
+CMD ["mix", "phx.server"]
