@@ -1,0 +1,5 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/api:$COMMIT_SHA', '.', '-f', 'Dockerfile-api']
+images:
+  - "gcr.io/$PROJECT_ID/api:$COMMIT_SHA"
